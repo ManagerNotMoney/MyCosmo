@@ -1,0 +1,6 @@
+name: MyCosmo
+version: 1.0.0
+main: io.github.managermoney.Main
+description: Плагин добавляет наблюдения за космосом и..
+author: ManagerMoney
+api-version: "1.21.11"
