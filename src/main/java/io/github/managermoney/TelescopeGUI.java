@@ -299,16 +299,27 @@ public class TelescopeGUI implements Listener {
         ItemStack item = new ItemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE);
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
-        int percent = max <= 0 ? 0 : (int) ((progress * 100.0) / max);
 
         meta.setDisplayName("§bНастройка");
-        meta.setLore(Arrays.asList(
-                "",
-                "§7Настройка: §f" + type.getDisplay(),
-                "",
-                "§7Прогресс: §b" + percent + "%",
-                ""
-        ));
+        if (max <= 0) {
+            // Idle-состояние: настройка не идёт
+            meta.setLore(Arrays.asList(
+                    "",
+                    "§7Здесь отображается прогресс настройки",
+                    "§7частоты, направления, полярности",
+                    "§7и калибровки телескопа.",
+                    ""
+            ));
+        } else {
+            int percent = (int) ((progress * 100.0) / max);
+            meta.setLore(Arrays.asList(
+                    "",
+                    "§7Настройка: §f" + type.getDisplay(),
+                    "",
+                    "§7Прогресс: §b" + percent + "%",
+                    ""
+            ));
+        }
         item.setItemMeta(meta);
         return item;
     }
@@ -548,14 +559,22 @@ public class TelescopeGUI implements Listener {
             Set<Player> viewers = locationViewers.get(baseLoc);
             if (viewers != null) {
                 viewers.remove(player);
-                if (viewers.isEmpty()) {
+                // Оставляем запись locationViewers пока идёт задача —
+                // RecordingTask/TuningTask добавят игрока обратно при повторном открытии
+                boolean taskRunning = recordingTasks.containsKey(baseLoc)
+                        || tuningTasks.containsKey(baseLoc);
+                if (viewers.isEmpty() && !taskRunning) {
                     locationViewers.remove(baseLoc);
                 }
             }
-            Inventory topInv = event.getView().getTopInventory();
-            ItemStack diskSlot = topInv.getItem(DISKETTE_SLOT);
-            if (diskSlot == null || diskSlot.getType() == Material.AIR) {
-                completedDiskettes.remove(baseLoc);
+            // Не трогаем completedDiskettes если запись ещё идёт —
+            // задача завершится сама и положит дискету в слот
+            if (!recordingTasks.containsKey(baseLoc)) {
+                Inventory topInv = event.getView().getTopInventory();
+                ItemStack diskSlot = topInv.getItem(DISKETTE_SLOT);
+                if (diskSlot == null || diskSlot.getType() == Material.AIR) {
+                    completedDiskettes.remove(baseLoc);
+                }
             }
         }
     }
@@ -694,6 +713,7 @@ public class TelescopeGUI implements Listener {
                 }
                 if (shouldMissSignal(baseLoc)) {
                     resetScanButton(baseLoc);
+                    broadcastToViewers(baseLoc, "§cСканирование завершено. Сигнал не обнаружен.");
                     notifySubscribers(baseLoc, "§cСканирование завершено. Сигнал не обнаружен.");
                     return;
                 }
@@ -720,7 +740,7 @@ public class TelescopeGUI implements Listener {
         telescopeListener.registerScanTask(baseLoc, scanTask);
     }
 
-    private void startScanningProgress(Location baseLoc, int totalTicks) {
+    public void startScanningProgress(Location baseLoc, int totalTicks) {
         BukkitRunnable runnable = new BukkitRunnable() {
             int elapsed = 0;
 
@@ -743,6 +763,21 @@ public class TelescopeGUI implements Listener {
         };
         BukkitTask task = runnable.runTaskTimer(plugin, 0L, 20L);
         scanningProgressTasks.put(baseLoc, task);
+    }
+
+    public void stopScanningProgress(Location baseLoc) {
+        BukkitTask task = scanningProgressTasks.remove(baseLoc);
+        if (task != null) task.cancel();
+    }
+
+    public void broadcastToViewers(Location baseLoc, String message) {
+        Set<Player> viewers = locationViewers.get(baseLoc);
+        if (viewers == null) return;
+        for (Player p : new HashSet<>(viewers)) {
+            if (p != null && p.isOnline()) {
+                p.sendMessage(message);
+            }
+        }
     }
 
     private void updateScanButtonProgress(Location baseLoc, int percent) {
@@ -781,19 +816,21 @@ public class TelescopeGUI implements Listener {
 
     private String determineRecordedQuality(CalibrationLevel calibration) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
+        String terrible = DisketteManager.QUALITIES.get(0);
+        String average  = DisketteManager.QUALITIES.get(2);
         switch (calibration) {
             case NOT_CALIBRATED:
             case TERRIBLE:
             case BAD:
-                return "Ужасное";
+                return terrible;
             case INACCURATE:
-                return random.nextInt(100) < 70 ? "Ужасное" : "Среднее";
+                return random.nextInt(100) < 70 ? terrible : average;
             case NORMAL:
-                return random.nextInt(100) < 40 ? "Ужасное" : "Среднее";
+                return random.nextInt(100) < 40 ? terrible : average;
             case EXCELLENT:
-                return "Среднее";
+                return average;
             default:
-                return "Ужасное";
+                return terrible;
         }
     }
 
@@ -968,50 +1005,54 @@ public class TelescopeGUI implements Listener {
 
             remaining -= 20;
             if (remaining <= 0) {
-                String hash = generateRandomHash();
-                SignalSourceManager.SignalSource source = SignalSourceManager.random();
-                String sourceName = source.getDisplayName();
-                String message = source.randomMessage();
+                try {
+                    String hash = generateRandomHash();
+                    SignalSourceManager.SignalSource source = SignalSourceManager.random();
+                    String sourceName = source.getDisplayName();
+                    String message = source.randomMessage();
 
-                boolean isEncryptedSource = "transmitter".equalsIgnoreCase(source.getId())
-                        || "ottoman_relay".equalsIgnoreCase(source.getId());
-                if (isEncryptedSource) {
-                    recordedQuality = DisketteManager.QUALITIES.get(0);
-                    DisketteManager.setEncrypted(diskette, true);
-                } else {
-                    DisketteManager.clearEncrypted(diskette);
-                }
+                    boolean isEncryptedSource = "transmitter".equalsIgnoreCase(source.getId())
+                            || "ottoman_relay".equalsIgnoreCase(source.getId());
+                    if (isEncryptedSource) {
+                        recordedQuality = DisketteManager.QUALITIES.get(0);
+                        DisketteManager.setEncrypted(diskette, true);
+                    } else {
+                        DisketteManager.clearEncrypted(diskette);
+                    }
 
-                DisketteManager.setHash(diskette, hash);
-                DisketteManager.setQuality(diskette, recordedQuality);
-                DisketteManager.setSource(diskette, sourceName);
-                DisketteManager.setMessage(diskette, message);
+                    DisketteManager.setHash(diskette, hash);
+                    DisketteManager.setQuality(diskette, recordedQuality);
+                    DisketteManager.setSource(diskette, sourceName);
+                    DisketteManager.setMessage(diskette, message);
 
-                completedDiskettes.put(loc, diskette.clone());
-                degradeCalibration(loc);
-                recordingTasks.remove(loc);
-                TelescopeListener.getActiveSignals().remove(loc);
-                resetScanButton(loc);
-                telescopeListener.cancelSignalExpiry(loc);
+                    completedDiskettes.put(loc, diskette.clone());
+                    degradeCalibration(loc);
+                    TelescopeListener.getActiveSignals().remove(loc);
+                    resetScanButton(loc);
+                    telescopeListener.cancelSignalExpiry(loc);
 
-                if (viewers != null) {
-                    for (Player player : new HashSet<>(viewers)) {
-                        if (player == null || !player.isOnline()) continue;
-                        Inventory topInv = player.getOpenInventory().getTopInventory();
-                        if (topInv != null && GUI_TITLE.equals(player.getOpenInventory().getTitle())) {
-                            topInv.setItem(DISKETTE_SLOT, diskette.clone());
-                            topInv.setItem(TUNING_SLOT, createTuningItem(TuningType.FREQUENCY, 0, 0));
-                            topInv.setItem(RECORD_BUTTON_SLOT, createRecordButton());
-                            player.updateInventory();
+                    if (viewers != null) {
+                        for (Player player : new HashSet<>(viewers)) {
+                            if (player == null || !player.isOnline()) continue;
+                            Inventory topInv = player.getOpenInventory().getTopInventory();
+                            if (topInv != null && GUI_TITLE.equals(player.getOpenInventory().getTitle())) {
+                                topInv.setItem(DISKETTE_SLOT, diskette.clone());
+                                topInv.setItem(TUNING_SLOT, createTuningItem(TuningType.FREQUENCY, 0, 0));
+                                topInv.setItem(RECORD_BUTTON_SLOT, createRecordButton());
+                                player.updateInventory();
+                            }
                         }
                     }
+
+                    // Убрано сообщение initiator — теперь только подписчикам
+                    loc.getWorld().playSound(loc, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.0f);
+                    notifySubscribers(loc, "§aЗапись сигнала завершена! Дискета готова.");
+                } catch (Exception ex) {
+                    plugin.getLogger().warning("[TelescopeGUI] Ошибка завершения записи: " + ex.getMessage());
+                } finally {
+                    recordingTasks.remove(loc);
+                    cancel();
                 }
-
-                // Убрано сообщение initiator — теперь только подписчикам
-                loc.getWorld().playSound(loc, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.0f);
-                notifySubscribers(loc, "§aЗапись сигнала завершена! Дискета готова.");
-
-                cancel();
             }
         }
     }

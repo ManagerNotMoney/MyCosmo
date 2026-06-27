@@ -251,7 +251,11 @@ public class TelescopeListener implements Listener {
             int baseDelay = 300 + ThreadLocalRandom.current().nextInt(501);
             int delay = gui != null ? gui.getAdjustedScanDelay(loc, baseDelay) : baseDelay;
 
+            // Показываем прогресс сканирования в GUI
+            if (gui != null) gui.startScanningProgress(loc, delay);
+
             BukkitTask scanTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (gui != null) gui.stopScanningProgress(loc);
                 if (!builtTelescopes.contains(loc)) {
                     player.sendMessage("§cТелескоп был разрушен во время сканирования.");
                     scanningTasks.remove(loc);
@@ -263,13 +267,15 @@ public class TelescopeListener implements Listener {
                     return;
                 }
                 if (gui != null && gui.shouldMissSignal(loc)) {
-                    player.sendMessage("§cСканирование завершено. Сигнал не обнаружен.");
+                    if (gui != null) gui.resetScanButton(loc);
+                    // Сообщить всем зрителям GUI и самому игроку
+                    if (gui != null) gui.broadcastToViewers(loc, "§cСканирование завершено. Сигнал не обнаружен.");
+                    else player.sendMessage("§cСканирование завершено. Сигнал не обнаружен.");
                     scanningTasks.remove(loc);
                     return;
                 }
                 activeSignals.put(loc, signal);
                 loc.getWorld().playSound(loc, Sound.BLOCK_NOTE_BLOCK_CHIME, 1.0f, 1.2f);
-                // Убрано старое сообщение — теперь только через GUI и подписку
                 if (gui != null) {
                     gui.onSignalFound(loc, randomFreq, randomDir, randomPol);
                 }

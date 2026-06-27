@@ -1,0 +1,210 @@
+# =====================================================
+#  MyCosmo — English Localization
+#  Supports § and & color codes
+#  Placeholders: {id}, {quality}, {mode}, etc.
+# =====================================================
+
+telescope:
+  built:           "&aRadio telescope built"
+  destroyed:       "Radio telescope destroyed"
+  destroyed_during_scan: "&cThe telescope was destroyed during scanning."
+  paper_recorded:  "&aRadio tower ID recorded on paper."
+  no_id:           "&cThis radio tower has no ID."
+  sky_blocked:     "Sky is obstructed. Signal cannot be received."
+  signal_active:   "This radio telescope already has an active signal. Record it to a diskette."
+  scanning_wait:   "&cScanning already in progress. Please wait."
+  scan_start:      "&eStarting sky scan... This will take a moment."
+  signal_expired:  "&cRadio telescope signal expired (5 minutes passed)."
+  signal_already:  "&cThis radio telescope already has an active signal."
+  not_found_id:    "&cRadio tower with this ID not found or destroyed."
+
+telescope_gui:
+  title:            "Radio Telescope"
+  scan_start_name:  "&cStart Scanning"
+  scan_start_lore:
+    - "&7Click to start searching for a signal"
+    - "&7(Clear sky above the telescope required)"
+  signal_found_name: "&aSignal Found!"
+  signal_found_lore:
+    - "&7{frequency_label}"
+    - "&7{direction_label}"
+    - "&7{polarization_label}"
+    - "&7Click to start a new scan"
+  record_name:    "&aRecord Signal"
+  record_lore:
+    - "&7Click to start recording"
+    - "&7(A diskette must be in your hand or inventory)"
+  record_busy_name: "&cRecording in Progress"
+  direction_name: "Direction"
+  frequency_name: "Signal Frequency"
+  polarization_name: "Polarization"
+  polarization_lore:
+    - "&b{polarization}"
+    - "&7Click to change polarization"
+  calibration_name: "Calibration"
+  calibration_lore:
+    - "&b{state}"
+    - "&7Click to improve calibration"
+    - "&7Poor calibration slows signal detection"
+    - "&7and reduces recording quality"
+  tuning_name:    "&bTuning"
+  tuning_lore:
+    - ""
+    - "&7Tuning: &f{type}"
+    - ""
+    - "&7Progress: &b{percent}%"
+    - ""
+  recording_name: "Recording"
+  recording_lore_progress: "&6Progress: {percent}%"
+  recording_lore_done:     "&aDone"
+  bell_name:      "&6Radio Tower Number"
+  bell_lore:
+    - "&7ID: {id}"
+    - "&7Click to subscribe/unsubscribe"
+    - "&7from tuning completion notifications"
+  scan_progress_name: "&eScanning..."
+  scan_progress_lore:
+    - "&7Progress: {percent}%"
+    - "&7Please wait, searching for signal..."
+  notify_on:      "&7[&6{id}&7] &aNotifications enabled! You will receive messages about tuning completion and signal detection."
+  notify_off:     "&7[&6{id}&7] &cNotifications disabled."
+  notify_tuning_done: "&aTuning &f{type} &acompleted!"
+  notify_signal_found: "&aSignal detected! {frequency}, {direction}"
+  notify_record_done: "&aSignal recording complete! Diskette is ready."
+  notify_scan_miss: "&cScan complete. No signal detected."
+  err_tuning:     "&cTelescope is tuning. Wait for it to complete."
+  err_recording:  "&cSignal recording in progress. Please wait."
+  err_scanning:   "&cScanning already in progress."
+  err_signal_active: "&cThis telescope already has an active signal."
+  err_sky:        "&cSky is obstructed. Signal cannot be received."
+  err_no_signal:  "&cNo active signal. Right-click the red block first."
+  err_scan_wait:  "&cScanning not yet complete. Please wait."
+  err_mismatch:   "&cFrequency, direction and/or polarization do not match the signal parameters!"
+  err_no_diskette: "&cYou don't have an empty diskette (without hash) in your inventory or hand."
+  err_cursor:     "&cClear your cursor first."
+  err_calibration_max: "&aCalibration is already at maximum."
+  err_calibration_obs: "&cCalibration is only available when opening the radio telescope directly."
+  err_already_tuning: "&cTelescope is already tuning."
+  paper_name:     "&6Radio Tower Number"
+  paper_id_lore:  "&7ID: {id}"
+
+directions:
+  - "North"
+  - "East"
+  - "South"
+  - "West"
+
+frequencies:
+  - "LW (150–450 kHz)"
+  - "MW (500–1600 kHz)"
+  - "HF (3–30 MHz)"
+  - "VHF (30–300 MHz)"
+
+format:
+  frequency:    "Frequency: {value}"
+  direction:    "Direction: {value}"
+  polarization: "Polarization: {value}"
+  unknown:      "unknown"
+
+polarization:
+  VERTICAL:       "Vertical"
+  HORIZONTAL:     "Horizontal"
+  LEFT_CIRCULAR:  "Left Circular"
+  RIGHT_CIRCULAR: "Right Circular"
+  ELLIPTICAL:     "Elliptical"
+
+tuning_type:
+  FREQUENCY:    "Frequency"
+  POLARIZATION: "Polarization"
+  DIRECTION:    "Direction"
+  CALIBRATION:  "Calibration"
+
+calibration:
+  NOT_CALIBRATED: "Not Calibrated"
+  TERRIBLE:       "Terrible Calibration"
+  BAD:            "Bad Calibration"
+  INACCURATE:     "Inaccurate Calibration"
+  NORMAL:         "Normal Calibration"
+  EXCELLENT:      "Excellent Calibration"
+
+observatory:
+  gui_title: "Observatory"
+  built:     "&aObservatory built!"
+  destroyed: "&cObservatory destroyed."
+
+console:
+  gui_title: "Diskette Console"
+  built:     "&aDiskette Console built!"
+  destroyed: "&cDiskette Console destroyed."
+  bell_name: "&6Notifications"
+  bell_subscribed:   "&aSubscription active"
+  bell_unsubscribed: "&cSubscription inactive"
+  bell_lore:
+    - "&7Click to subscribe/unsubscribe"
+    - "&7from diskette upgrade notifications"
+  mode_name: "&eUpgrade Mode"
+  mode_lore:
+    - "{mode}"
+    - "&7Choose the mode that matches"
+    - "&7the current diskette quality."
+    - "&7For {hint}"
+  progress_name: "&fProgress"
+  progress_lore_percent: "&6{percent}%"
+  progress_lore_waiting: "&7Waiting..."
+  notify_on:     "&aDiskette upgrade notifications enabled!"
+  notify_off:    "&cDiskette upgrade notifications disabled."
+  notify_decoded:  "&aDiskette decoded! Quality: &eTerrible"
+  notify_upgraded: "&aDiskette upgraded to quality: &e{quality}"
+  err_encrypted:   "&cDiskette is encrypted! Use &cDecoder&c mode first."
+  err_wrong_mode:  "&cWrong upgrade mode! Required: {mode}"
+  prefix:          "&7[&bDiskette Console&7] "
+
+upgrade_mode:
+  NONE:          "&7None"
+  DECODER:       "&cDecoder"
+  DENOISE:       "&aNoise Removal"
+  EQUALIZE:      "&bEqualizer"
+  DYNAMIC_RANGE: "&6Dynamic Range"
+  MASTERING:     "&dMastering"
+
+upgrade_hint:
+  DECODER:       "&cEncrypted → Terrible"
+  DENOISE:       "&aTerrible → Poor"
+  EQUALIZE:      "&bPoor → Average"
+  DYNAMIC_RANGE: "&6Average → Good"
+  MASTERING:     "&dGood → Excellent"
+  NONE:          "&cno mode → upgrade impossible"
+
+diskette:
+  name:          "Diskette"
+  description:   "&7Data storage diskette"
+  hash_null:     "&aHash:[NULL]"
+  no_signal:     "&7No recorded signal on the diskette."
+  signal_from:   "&eSignal from: &f{source}"
+  message_label: "&eMessage: &f{message}"
+  quality_prefix: "&aQuality: "
+
+cashier:
+  registered: "&aDrone registered! Exchange station ready."
+  sending:    "&eDrone heading to the 'Voice' research lab for diskette analysis."
+  paid:       "&aThe lab analyzed the diskettes, crediting you: &e{amount}₣."
+  no_economy: "&cEconomy not loaded. No money credited."
+
+plugin:
+  enabled:        "MyCosmo plugin successfully loaded!"
+  disabled:       "MyCosmo plugin unloaded."
+  no_vault:       "Vault not found! Diskette-to-currency exchange will not work."
+  obs_loaded:     "Loaded {count} observatories."
+  console_loaded: "Loaded {count} diskette consoles."
+  obs_save_err:   "Failed to save observa.yml: {error}"
+  console_save_err: "Failed to save console.yml: {error}"
+  obs_load_err:   "Error loading observatory: {error}"
+  console_load_err: "Error loading console: {error}"
+  signals_loaded: "Loaded {count} signal sources from signals.yml."
+
+diskette_quality:
+  terrible: "Terrible"
+  bad:      "Poor"
+  average:  "Average"
+  good:     "Good"
+  excellent: "Excellent"

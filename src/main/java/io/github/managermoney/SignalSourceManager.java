@@ -60,29 +60,34 @@ public class SignalSourceManager {
                     new InputStreamReader(defStream, StandardCharsets.UTF_8)));
         }
 
-        List<Map<?, ?>> list = cfg.getMapList("sources");
-        for (Map<?, ?> map : list) {
-            try {
-                String id          = (String) map.get("id");
-                String displayName = (String) map.get("name");
-                int    valueBonus  = map.containsKey("value_bonus")
-                        ? ((Number) map.get("value_bonus")).intValue() : 0;
+        // signals.yml использует формат "KEY: {name:..., messages:[...]}"
+        // а не список "- id: KEY", поэтому читаем через getConfigurationSection
+        org.bukkit.configuration.ConfigurationSection sourcesSection = cfg.getConfigurationSection("sources");
+        if (sourcesSection != null) {
+            for (String id : sourcesSection.getKeys(false)) {
+                try {
+                    org.bukkit.configuration.ConfigurationSection entry = sourcesSection.getConfigurationSection(id);
+                    if (entry == null) continue;
 
-                Object rawMsgs = map.get("messages");
-                List<String> messages = new ArrayList<>();
-                if (rawMsgs instanceof List) {
-                    for (Object o : (List<?>) rawMsgs) messages.add(String.valueOf(o));
+                    String displayName = entry.getString("name", id);
+                    int    valueBonus  = entry.getInt("value_bonus", 0);
+
+                    List<String> messages = new ArrayList<>();
+                    List<?> rawMsgs = entry.getList("messages");
+                    if (rawMsgs != null) {
+                        for (Object o : rawMsgs) messages.add(String.valueOf(o));
+                    }
+
+                    SignalSource src = new SignalSource(id, displayName, messages, valueBonus);
+                    allSources.add(src);
+                    byName.put(displayName, src);
+
+                    if ("transmitter".equalsIgnoreCase(id)) {
+                        transmitter = src;
+                    }
+                } catch (Exception ex) {
+                    plugin.getLogger().warning("[SignalSourceManager] Ошибка загрузки источника '" + id + "': " + ex.getMessage());
                 }
-
-                SignalSource src = new SignalSource(id, displayName, messages, valueBonus);
-                allSources.add(src);
-                byName.put(displayName, src);
-
-                if ("transmitter".equalsIgnoreCase(id)) {
-                    transmitter = src;
-                }
-            } catch (Exception ex) {
-                plugin.getLogger().warning("[SignalSourceManager] Ошибка загрузки источника: " + ex.getMessage());
             }
         }
 

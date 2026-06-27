@@ -314,7 +314,7 @@ public class DisketteConsoleGUI implements Listener {
             }
 
             String quality = DisketteManager.getQuality(diskette);
-            if (quality == null || quality.equals("Отличное")) {
+            if (quality == null || quality.equals(DisketteManager.QUALITIES.get(4))) {
                 updateProgressForConsole(consoleBase, 0, 0);
                 return;
             }
@@ -378,6 +378,16 @@ public class DisketteConsoleGUI implements Listener {
 
         @Override
         public void run() {
+            try {
+                runSafe();
+            } catch (Exception ex) {
+                plugin.getLogger().warning("[DisketteConsoleGUI] Критическая ошибка в UpgradeTask: " + ex.getMessage());
+                updateProgressForConsole(consoleBase, 0, 0);
+                finish();
+            }
+        }
+
+        private void runSafe() {
             ItemStack disk = storedDiskettes.get(consoleBase);
             if (disk == null || !DisketteManager.isDiskette(disk) || !DisketteManager.hasHash(disk)) {
                 updateProgressForConsole(consoleBase, 0, 0);
@@ -385,7 +395,9 @@ public class DisketteConsoleGUI implements Listener {
                 return;
             }
             String quality = DisketteManager.getQuality(disk);
-            if (quality == null || quality.equals("Отличное")) {
+            String qualityExcellent = DisketteManager.QUALITIES.get(4);
+            String qualityTerrible  = DisketteManager.QUALITIES.get(0);
+            if (quality == null || quality.equals(qualityExcellent)) {
                 updateProgressForConsole(consoleBase, 0, 0);
                 finish();
                 return;
@@ -393,20 +405,26 @@ public class DisketteConsoleGUI implements Listener {
 
             remaining -= 20;
             if (remaining <= 0) {
-                if (DisketteManager.isEncrypted(disk)) {
-                    DisketteManager.clearEncrypted(disk);
-                    DisketteManager.setQuality(disk, "Ужасное");
-                    updateDisketteForConsole(consoleBase, disk);
-                    player.playSound(consoleBase.getLocation(), Sound.BLOCK_ANVIL_USE, 0.8f, 1.0f);
-                    notifySubscribers(consoleBase, "§aДискета декодирована! Качество: §eУжасное");
-                } else if (DisketteManager.upgradeQuality(disk)) {
-                    updateDisketteForConsole(consoleBase, disk);
-                    // Убрано сообщение player.sendMessage — теперь только подписчикам
-                    player.playSound(consoleBase.getLocation(), Sound.BLOCK_ANVIL_USE, 0.8f, 1.0f);
-                    notifySubscribers(consoleBase, "§aДискета улучшена до качества: §e" + DisketteManager.getQuality(disk));
+                try {
+                    if (DisketteManager.isEncrypted(disk)) {
+                        DisketteManager.clearEncrypted(disk);
+                        DisketteManager.setQuality(disk, qualityTerrible);
+                        updateDisketteForConsole(consoleBase, disk);
+                        player.playSound(consoleBase.getLocation(), Sound.BLOCK_ANVIL_USE, 0.8f, 1.0f);
+                        notifySubscribers(consoleBase, "§aДискета декодирована! Качество: §e" + qualityTerrible);
+                    } else if (DisketteManager.upgradeQuality(disk)) {
+                        updateDisketteForConsole(consoleBase, disk);
+                        // Убрано сообщение player.sendMessage — теперь только подписчикам
+                        player.playSound(consoleBase.getLocation(), Sound.BLOCK_ANVIL_USE, 0.8f, 1.0f);
+                        notifySubscribers(consoleBase, "§aДискета улучшена до качества: §e" + DisketteManager.getQuality(disk));
+                    }
+                    updateProgressForConsole(consoleBase, 0, 0);
+                } catch (Exception ex) {
+                    plugin.getLogger().warning("[DisketteConsoleGUI] Ошибка завершения записи: " + ex.getMessage());
+                    updateProgressForConsole(consoleBase, 0, 0);
+                } finally {
+                    finish();
                 }
-                updateProgressForConsole(consoleBase, 0, 0);
-                finish();
                 return;
             }
 
